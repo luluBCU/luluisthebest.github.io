@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Space Invaders</title>
+    <style>
+        body { background: #111; color: white; text-align: center; font-family: sans-serif; }
+        canvas { background: #000; border: 4px solid #00f; display: block; margin: 20px auto; }
+        .back-link { color: #00f; text-decoration: none; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Space Invaders</h1>
+    <p>Use LEFT / RIGHT arrows to move, SPACEBAR to shoot!</p>
+    <canvas id="spaceCanvas" width="400" height="400"></canvas>
+    <p><a href="../index.html" class="back-link">⬅ Back to Arcade Lobby</a></p>
+
+    <script>
+        const canvas = document.getElementById("spaceCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        let player = { x: 180, y: 360, width: 30, height: 15, speed: 5 };
+        let bullets = [];
+        let invaders = [];
+        let rightPressed = false, leftPressed = false, spacePressed = false, fireCooldown = false;
+
+        // Create grid of invaders
+        for(let c=0; c<6; c++) {
+            for(let r=0; r<3; r++) {
+                invaders.push({ x: c*50 + 50, y: r*40 + 40, width: 25, height: 15, alive: true });
+            }
+        }
+
+        document.addEventListener("keydown", e => {
+            if(e.key == "Right" || e.key == "ArrowRight") rightPressed = true;
+            if(e.key == "Left" || e.key == "ArrowLeft") leftPressed = true;
+            if(e.key == " " || e.code == "Space") spacePressed = true;
+        });
+        document.addEventListener("keyup", e => {
+            if(e.key == "Right" || e.key == "ArrowRight") rightPressed = false;
+            if(e.key == "Left" || e.key == "ArrowLeft") leftPressed = false;
+            if(e.key == " " || e.code == "Space") spacePressed = false;
+        });
+
+        function update() {
+            if(rightPressed && player.x < canvas.width - player.width) player.x += player.speed;
+            if(leftPressed && player.x > 0) player.x -= player.speed;
+            
+            if(spacePressed && !fireCooldown) {
+                bullets.push({ x: player.x + player.width/2 - 2, y: player.y, width: 4, height: 10 });
+                fireCooldown = true;
+                setTimeout(() => fireCooldown = false, 400); // weapon fire rate limit
+            }
+
+            bullets.forEach((b, bIdx) => {
+                b.y -= 4;
+                if(b.y < 0) bullets.splice(bIdx, 1);
+            });
+
+            invaders.forEach(inv => {
+                if(!inv.alive) return;
+                bullets.forEach((b, bIdx) => {
+                    if(b.x > inv.x && b.x < inv.x + inv.width && b.y > inv.y && b.y < inv.y + inv.height) {
+                        inv.alive = false;
+                        bullets.splice(bIdx, 1);
+                    }
+                });
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Player
+            ctx.fillStyle = "#00ff00"; ctx.fillRect(player.x, player.y, player.width, player.height);
+            // Bullets
+            ctx.fillStyle = "#ffff00"; bullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+            // Invaders
+            ctx.fillStyle = "#ff0000"; invaders.forEach(inv => { if(inv.alive) ctx.fillRect(inv.x, inv.y, inv.width, inv.height); });
+        }
+
+        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+        gameLoop();
+    </script>
+</body>
+</html>
